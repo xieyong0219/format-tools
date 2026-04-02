@@ -1,0 +1,535 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --pixel-page: #e8e0c8;
+  --pixel-page-accent: rgba(245, 158, 11, 0.12);
+  --pixel-grid: rgba(32, 34, 36, 0.08);
+  --pixel-shell: #fff7e2;
+  --pixel-panel: #fffaf0;
+  --pixel-panel-muted: #f1ead7;
+  --pixel-surface: #f6eedb;
+  --pixel-chip: #efe5ce;
+  --pixel-border: #23262b;
+  --pixel-border-soft: #535862;
+  --pixel-shadow: rgba(35, 38, 43, 0.88);
+  --pixel-shadow-soft: rgba(35, 38, 43, 0.55);
+  --pixel-text: #1f2937;
+  --pixel-muted-text: #5b6472;
+  --pixel-accent: #2f855a;
+  --pixel-accent-hover: #276749;
+  --pixel-accent-contrast: #f7fee7;
+  --pixel-highlight: #f6ad55;
+  --pixel-danger: #c53030;
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    "PingFang SC",
+    "Microsoft YaHei UI",
+    monospace;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark {
+  --pixel-page: #111315;
+  --pixel-page-accent: rgba(74, 222, 128, 0.08);
+  --pixel-grid: rgba(244, 244, 245, 0.06);
+  --pixel-shell: #191b1f;
+  --pixel-panel: #202328;
+  --pixel-panel-muted: #17191d;
+  --pixel-surface: #121417;
+  --pixel-chip: #2a2e34;
+  --pixel-border: #d4d4d8;
+  --pixel-border-soft: #a1a1aa;
+  --pixel-shadow: rgba(0, 0, 0, 0.84);
+  --pixel-shadow-soft: rgba(0, 0, 0, 0.52);
+  --pixel-text: #f4f4f5;
+  --pixel-muted-text: #b4b4bd;
+  --pixel-accent: #65d46e;
+  --pixel-accent-hover: #4fc75a;
+  --pixel-accent-contrast: #111315;
+  --pixel-highlight: #f6c453;
+  --pixel-danger: #fb7185;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    linear-gradient(var(--pixel-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pixel-grid) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.48), var(--pixel-page-accent) 24%, transparent 48%),
+    linear-gradient(180deg, #f7f1dd 0%, var(--pixel-page) 100%);
+  background-size:
+    12px 12px,
+    12px 12px,
+    auto,
+    auto;
+  color: var(--pixel-text);
+  transition:
+    background 220ms ease,
+    color 220ms ease;
+}
+
+html.dark body {
+  background:
+    linear-gradient(var(--pixel-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pixel-grid) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(101, 212, 110, 0.12), transparent 32%),
+    linear-gradient(180deg, #17191c 0%, var(--pixel-page) 100%);
+  background-size:
+    12px 12px,
+    12px 12px,
+    auto,
+    auto;
+  color: var(--pixel-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+textarea {
+  caret-color: #0f172a;
+}
+
+textarea::selection {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.code-scroll {
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.68) transparent;
+  overscroll-behavior: contain;
+}
+
+.code-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.52);
+  background-clip: padding-box;
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.64);
+  background-clip: padding-box;
+}
+
+html.dark .code-scroll {
+  scrollbar-color: rgba(113, 113, 122, 0.8) transparent;
+}
+
+html.dark .code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.72);
+  background-clip: padding-box;
+}
+
+html.dark .code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.72);
+  background-clip: padding-box;
+}
+
+.pixel-shell {
+  border: 4px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-shell) !important;
+  box-shadow:
+    10px 10px 0 var(--pixel-shadow),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
+}
+
+.pixel-strip {
+  border-top: 3px solid var(--pixel-border) !important;
+  border-bottom: 3px solid var(--pixel-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    var(--pixel-panel-muted) !important;
+}
+
+.pixel-card {
+  border: 3px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-panel) !important;
+  box-shadow: 6px 6px 0 var(--pixel-shadow-soft) !important;
+}
+
+.pixel-panel {
+  border: 3px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-panel) !important;
+  box-shadow: 6px 6px 0 var(--pixel-shadow-soft) !important;
+}
+
+.pixel-surface {
+  border: 2px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(var(--pixel-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pixel-grid) 1px, transparent 1px),
+    var(--pixel-surface) !important;
+  background-size:
+    14px 14px,
+    14px 14px,
+    auto !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05) !important;
+}
+
+.pixel-title {
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    "PingFang SC",
+    "Microsoft YaHei UI",
+    monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+}
+
+.pixel-subtitle {
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    "PingFang SC",
+    "Microsoft YaHei UI",
+    monospace !important;
+  letter-spacing: 0.03em;
+}
+
+.pixel-chip {
+  border: 2px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-chip) !important;
+  box-shadow: 3px 3px 0 var(--pixel-shadow-soft) !important;
+}
+
+.pixel-button {
+  border: 2px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-panel) !important;
+  box-shadow: 4px 4px 0 var(--pixel-shadow) !important;
+  color: var(--pixel-text) !important;
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    "PingFang SC",
+    "Microsoft YaHei UI",
+    monospace !important;
+  letter-spacing: 0.05em;
+}
+
+.pixel-button:hover {
+  background: var(--pixel-panel-muted) !important;
+}
+
+.pixel-button:active {
+  box-shadow: 2px 2px 0 var(--pixel-shadow) !important;
+}
+
+.pixel-button-primary {
+  background: var(--pixel-accent) !important;
+  color: var(--pixel-accent-contrast) !important;
+}
+
+.pixel-button-primary:hover {
+  background: var(--pixel-accent-hover) !important;
+}
+
+.pixel-button-ghost {
+  background: var(--pixel-chip) !important;
+}
+
+.pixel-button-active {
+  background: var(--pixel-highlight) !important;
+  color: #1a1a1a !important;
+}
+
+.pixel-icon-button {
+  border: 2px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-panel) !important;
+  box-shadow: 4px 4px 0 var(--pixel-shadow) !important;
+}
+
+.pixel-segment-wrap {
+  border: 3px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-panel) !important;
+  box-shadow: 4px 4px 0 var(--pixel-shadow-soft) !important;
+}
+
+.pixel-segment-button {
+  border-radius: 0 !important;
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    monospace !important;
+  letter-spacing: 0.08em;
+}
+
+.pixel-segment-active {
+  background: var(--pixel-accent) !important;
+  color: var(--pixel-accent-contrast) !important;
+}
+
+.pixel-toolbar-note {
+  border: 2px solid var(--pixel-border) !important;
+  border-radius: 0 !important;
+  background: var(--pixel-chip) !important;
+  box-shadow: 4px 4px 0 var(--pixel-shadow-soft) !important;
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    monospace !important;
+}
+
+.pixel-stat-label {
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    monospace !important;
+  letter-spacing: 0.14em !important;
+}
+
+.pixel-muyu-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid var(--pixel-border);
+  border-radius: 0;
+  background: var(--pixel-panel);
+  box-shadow: 4px 4px 0 var(--pixel-shadow);
+  color: var(--pixel-text);
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    monospace;
+  letter-spacing: 0.05em;
+}
+
+.pixel-muyu-button:hover {
+  background: var(--pixel-panel-muted);
+}
+
+.pixel-muyu-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--pixel-shadow);
+}
+
+.pixel-muyu-button.is-hitting .pixel-muyu-mallet {
+  animation: pixel-muyu-mallet-hit 180ms steps(3, end);
+}
+
+.pixel-muyu-button.is-hitting .pixel-muyu-body {
+  animation: pixel-muyu-body-hit 180ms steps(3, end);
+}
+
+.pixel-muyu-icon {
+  position: relative;
+  width: 30px;
+  height: 22px;
+}
+
+.pixel-muyu-body {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  height: 14px;
+  border: 2px solid var(--pixel-border);
+  background: #b7791f;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+}
+
+.pixel-muyu-body::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 3px;
+  height: 4px;
+  border-top: 2px solid rgba(255, 248, 220, 0.5);
+}
+
+.pixel-muyu-mallet {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  width: 12px;
+  height: 9px;
+  transform-origin: 2px 8px;
+}
+
+.pixel-muyu-mallet::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--pixel-border);
+  background: #f6ad55;
+}
+
+.pixel-muyu-mallet::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 7px;
+  height: 2px;
+  background: var(--pixel-border);
+}
+
+.pixel-muyu-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pixel-muyu-merit {
+  position: absolute;
+  right: -6px;
+  top: -12px;
+  pointer-events: none;
+  border: 2px solid var(--pixel-border);
+  background: var(--pixel-highlight);
+  color: #1f2937;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(2px) scale(0.92);
+}
+
+.pixel-muyu-button.is-merit-visible .pixel-muyu-merit {
+  animation: pixel-muyu-merit-pop 780ms steps(5, end);
+}
+
+.pixel-chip-tone-info {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.pixel-chip-tone-success {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.pixel-chip-tone-error {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.pixel-chip-tone-warn {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+html.dark .pixel-chip-tone-info {
+  background: #172554 !important;
+  border-color: #60a5fa !important;
+  color: #bfdbfe !important;
+}
+
+html.dark .pixel-chip-tone-success {
+  background: #052e16 !important;
+  border-color: #4ade80 !important;
+  color: #bbf7d0 !important;
+}
+
+html.dark .pixel-chip-tone-error {
+  background: #450a0a !important;
+  border-color: #fb7185 !important;
+  color: #fecdd3 !important;
+}
+
+html.dark .pixel-chip-tone-warn {
+  background: #451a03 !important;
+  border-color: #fbbf24 !important;
+  color: #fde68a !important;
+}
+
+@keyframes pixel-muyu-mallet-hit {
+  0% {
+    transform: rotate(-18deg) translateY(0);
+  }
+  45% {
+    transform: rotate(12deg) translateY(5px);
+  }
+  100% {
+    transform: rotate(-18deg) translateY(0);
+  }
+}
+
+@keyframes pixel-muyu-body-hit {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pixel-muyu-merit-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+}
