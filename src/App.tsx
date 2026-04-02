@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { HistoryPanel } from './components/HistoryPanel'
+import { OutputPreviewDialog } from './components/OutputPreviewDialog'
 import { StatusBar } from './components/StatusBar'
 import { StructuredInput, type StructuredInputHandle } from './components/StructuredInput'
 import { StructuredOutput } from './components/StructuredOutput'
@@ -76,6 +77,7 @@ function App() {
   const [showHeroMerit, setShowHeroMerit] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [linkedScrollEnabled, setLinkedScrollEnabled] = useState(false)
+  const [outputPreviewOpen, setOutputPreviewOpen] = useState(false)
   const [scrollSyncState, setScrollSyncState] = useState<ScrollSyncState | null>(null)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
 
@@ -319,16 +321,28 @@ function App() {
         </div>
       ) : null}
 
-      <div className="relative mx-auto flex h-full min-h-0 max-w-[1540px] flex-col px-4 py-4 lg:px-8 lg:py-6">
+      <OutputPreviewDialog
+        open={outputPreviewOpen}
+        mode={formatter.mode}
+        value={formatter.output}
+        stats={formatter.outputStats}
+        isDark={isDark}
+        onChange={formatter.setOutput}
+        onCopy={handleCopyOutput}
+        onExport={handleExportFile}
+        onClose={() => setOutputPreviewOpen(false)}
+      />
+
+      <div className="relative mx-auto flex h-full min-h-0 max-w-[1540px] flex-col px-2 py-2 sm:px-4 sm:py-4 lg:px-8 lg:py-6">
         <section className="pixel-shell flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="border-b border-slate-200/75 px-6 py-6 dark:border-zinc-800/80 lg:px-8 lg:py-7">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-4xl">
-                <h1 className="pixel-title text-[28px] text-slate-900 dark:text-zinc-50 lg:text-[34px]">
+          <div className="border-b border-slate-200/75 px-4 py-4 dark:border-zinc-800/80 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
+              <div className="max-w-4xl min-w-0">
+                <h1 className="pixel-title text-[20px] text-slate-900 dark:text-zinc-50 sm:text-[24px] lg:text-[34px]">
                   JSON / XML 格式化工具
                 </h1>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <p className="pixel-subtitle max-w-3xl flex-1 text-[14px] leading-7 text-slate-600 dark:text-zinc-400">
+                  <p className="pixel-subtitle min-w-0 max-w-3xl flex-1 text-[13px] leading-6 text-slate-600 dark:text-zinc-400 sm:text-[14px] sm:leading-7">
                     {heroMessage}
                   </p>
                   <MuyuButtonWithMerit
@@ -339,7 +353,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-stretch gap-2 xl:min-w-[450px] xl:items-end">
+              <div className="flex w-full flex-col items-stretch gap-2 2xl:max-w-[520px] 2xl:items-end">
                 <div className="flex justify-end">
                   <button
                     type="button"
@@ -352,7 +366,7 @@ function App() {
                   </button>
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[450px]">
+                <div className="grid gap-2 sm:grid-cols-3 2xl:w-full">
                   <div className="pixel-card px-3.5 py-3">
                     <div className="pixel-stat-label text-[10px] font-semibold uppercase text-slate-400 dark:text-zinc-500">
                       Mode
@@ -394,7 +408,6 @@ function App() {
             onFormat={handleFormat}
             onCompress={handleCompress}
             onCopy={handleCopyOutput}
-            onApply={formatter.applyOutputToInput}
             onClear={formatter.clearAll}
             onImportClipboard={handleImportClipboard}
             onImportFile={handleOpenImportFile}
@@ -404,7 +417,7 @@ function App() {
             onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
           />
 
-          <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto px-4 pb-4 pt-2 lg:px-6 lg:pb-6">
+          <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
             {historyOpen ? (
               <HistoryPanel
                 records={records}
@@ -423,7 +436,7 @@ function App() {
               </div>
             ) : null}
 
-            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+            <div className="grid min-h-0 flex-1 gap-2.5 xl:gap-3 2xl:grid-cols-2">
               <StructuredInput
                 ref={inputRef}
                 mode={formatter.mode}
@@ -431,12 +444,10 @@ function App() {
                 value={formatter.input}
                 isDark={isDark}
                 onChange={formatter.setInput}
-                placeholder="在这里粘贴 JSON 或 XML 内容..."
                 errorLocation={formatter.errorLocation}
                 linkedScrollEnabled={linkedScrollEnabled}
                 externalScrollState={scrollSyncState}
                 stats={formatter.inputStats}
-                helperText="默认已填充示例 JSON，可直接修改后操作。"
                 onScrollSync={handleScrollSync}
               />
 
@@ -444,14 +455,12 @@ function App() {
                 mode={formatter.mode}
                 value={formatter.output}
                 isDark={isDark}
-                viewMode={formatter.outputViewMode}
                 onChange={formatter.setOutput}
-                placeholder="格式化或压缩结果会显示在这里..."
                 linkedScrollEnabled={linkedScrollEnabled}
                 externalScrollState={scrollSyncState}
                 stats={formatter.outputStats}
-                helperText="输出区现在也可直接编辑，复制或回填前可先手动调整。"
                 onScrollSync={handleScrollSync}
+                onOpenPreview={() => setOutputPreviewOpen(true)}
               />
             </div>
           </main>

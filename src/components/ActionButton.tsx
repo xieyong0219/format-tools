@@ -36,10 +36,10 @@ export function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex min-w-[108px] select-none items-center justify-center gap-2 px-4 py-3 text-[13px] font-medium transition-all duration-150 ease-out will-change-transform disabled:cursor-not-allowed disabled:opacity-60 ${variantClassMap[variant]} ${activeClassName}`}
+      className={`inline-flex h-[48px] w-full min-w-0 select-none items-center justify-center gap-2 px-3 text-[12px] font-medium transition-all duration-150 ease-out will-change-transform sm:h-[50px] sm:min-w-[124px] sm:px-3.5 sm:text-[13px] disabled:cursor-not-allowed disabled:opacity-60 ${variantClassMap[variant]} ${activeClassName}`}
     >
       <span className="shrink-0">{icon}</span>
-      <span>{label}</span>
+      <span className="truncate">{label}</span>
     </button>
   )
 }

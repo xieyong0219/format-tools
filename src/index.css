@@ -198,10 +198,88 @@ html.dark .code-scroll::-webkit-scrollbar-thumb:hover {
     linear-gradient(90deg, var(--pixel-grid) 1px, transparent 1px),
     var(--pixel-surface) !important;
   background-size:
-    14px 14px,
-    14px 14px,
+    12px 12px,
+    12px 12px,
     auto !important;
+  background-position:
+    2px 2px,
+    2px 2px,
+    0 0 !important;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05) !important;
+}
+
+.editor-empty .cm-gutters {
+  display: none;
+}
+
+.monaco-pane {
+  position: relative;
+}
+
+.monaco-pane .monaco-editor,
+.monaco-pane .monaco-editor .margin,
+.monaco-pane .monaco-editor .monaco-editor-background,
+.monaco-pane .monaco-editor .inputarea.ime-input {
+  background: transparent !important;
+}
+
+.monaco-pane .monaco-editor .overflow-guard {
+  background: transparent !important;
+}
+
+.monaco-pane .monaco-editor .current-line,
+.monaco-pane .monaco-editor .margin-view-overlays .current-line {
+  border: none !important;
+}
+
+.monaco-pane .monaco-editor .margin-view-overlays .line-numbers {
+  color: #94a3b8 !important;
+}
+
+.monaco-pane .monaco-editor .monaco-folding-control {
+  opacity: 1 !important;
+}
+
+.monaco-pane .monaco-editor .monaco-scrollable-element > .scrollbar > .slider {
+  border-radius: 999px !important;
+}
+
+.monaco-pane .monaco-editor .view-line {
+  font-family:
+    "Cascadia Mono",
+    "JetBrains Mono",
+    "Consolas",
+    "PingFang SC",
+    "Microsoft YaHei UI",
+    monospace !important;
+}
+
+.monaco-error-line {
+  background: rgba(244, 63, 94, 0.08) !important;
+}
+
+.monaco-error-column {
+  border-bottom: 2px solid rgba(244, 63, 94, 0.72);
+}
+
+.monaco-error-gutter {
+  border-left: 4px solid rgba(244, 63, 94, 0.42);
+}
+
+html.dark .monaco-pane .monaco-editor .margin-view-overlays .line-numbers {
+  color: #a1a1aa !important;
+}
+
+html.dark .monaco-error-line {
+  background: rgba(127, 29, 29, 0.24) !important;
+}
+
+html.dark .monaco-error-column {
+  border-bottom: 2px solid rgba(251, 113, 133, 0.82);
+}
+
+html.dark .monaco-error-gutter {
+  border-left: 4px solid rgba(251, 113, 133, 0.42);
 }
 
 .pixel-title {
@@ -465,6 +543,57 @@ html.dark .code-scroll::-webkit-scrollbar-thumb:hover {
 .pixel-chip-tone-warn {
   background: #fef3c7 !important;
   color: #b45309 !important;
+}
+
+@media (max-width: 1024px) {
+  .pixel-shell {
+    box-shadow:
+      6px 6px 0 var(--pixel-shadow),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .pixel-card,
+  .pixel-panel {
+    box-shadow: 4px 4px 0 var(--pixel-shadow-soft) !important;
+  }
+
+  .pixel-button,
+  .pixel-icon-button,
+  .pixel-segment-wrap,
+  .pixel-toolbar-note,
+  .pixel-muyu-button,
+  .pixel-chip {
+    box-shadow: 3px 3px 0 var(--pixel-shadow-soft) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .pixel-shell {
+    border-width: 3px !important;
+    box-shadow:
+      4px 4px 0 var(--pixel-shadow),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .pixel-card,
+  .pixel-panel,
+  .pixel-strip {
+    border-width: 2px !important;
+    box-shadow: 3px 3px 0 var(--pixel-shadow-soft) !important;
+  }
+
+  .pixel-button,
+  .pixel-icon-button,
+  .pixel-segment-wrap,
+  .pixel-toolbar-note,
+  .pixel-muyu-button,
+  .pixel-chip {
+    box-shadow: 2px 2px 0 var(--pixel-shadow-soft) !important;
+  }
+
+  .pixel-title {
+    letter-spacing: 0.08em !important;
+  }
 }
 
 html.dark .pixel-chip-tone-info {

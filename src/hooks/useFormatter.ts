@@ -154,20 +154,6 @@ export function useFormatter() {
     setErrorLocation(null)
   }
 
-  function applyOutputToInput() {
-    if (!output.trim()) {
-      setNotice('暂无可回填内容。', 'info')
-      return
-    }
-
-    setInputState(output)
-    setModeSource('auto')
-    setStatusTone('success')
-    setStatusMessage('已将结果回填到输入区。')
-    setErrorMessage('')
-    setErrorLocation(null)
-  }
-
   function importInput(value: string) {
     setInputState(value)
     setModeSource('auto')
@@ -208,7 +194,6 @@ export function useFormatter() {
     formatContent,
     compressContent,
     clearAll,
-    applyOutputToInput,
     importInput,
     createSnapshot,
     restoreSnapshot,

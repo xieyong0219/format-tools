@@ -12,7 +12,6 @@ interface ToolbarProps {
   onFormat: () => void
   onCompress: () => void
   onCopy: () => void
-  onApply: () => void
   onClear: () => void
   onImportClipboard: () => void
   onImportFile: () => void
@@ -131,12 +130,12 @@ function UtilityButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`pixel-button inline-flex select-none items-center gap-2 px-3 py-2 text-[12px] font-medium transition-all duration-150 ease-out will-change-transform active:translate-y-[1px] active:scale-[0.985] ${
+      className={`pixel-button inline-flex h-[48px] w-full min-w-0 select-none items-center justify-center gap-2 px-3 text-[12px] font-medium transition-all duration-150 ease-out will-change-transform active:translate-y-[1px] active:scale-[0.985] sm:h-[50px] sm:min-w-[124px] sm:px-3.5 sm:text-[13px] ${
         active ? 'pixel-button-active' : ''
       } disabled:cursor-not-allowed disabled:opacity-60`}
     >
       <span className="shrink-0">{icon}</span>
-      <span>{label}</span>
+      <span className="truncate">{label}</span>
     </button>
   )
 }
@@ -151,7 +150,6 @@ export function Toolbar({
   onFormat,
   onCompress,
   onCopy,
-  onApply,
   onClear,
   onImportClipboard,
   onImportFile,
@@ -161,9 +159,9 @@ export function Toolbar({
   onToggleAlwaysOnTop,
 }: ToolbarProps) {
   return (
-    <section className="pixel-strip px-4 py-4 lg:px-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <section className="pixel-strip px-3 py-3 sm:px-4 sm:py-3.5 lg:px-6">
+      <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
           <div className="pixel-segment-wrap inline-flex w-fit p-1">
             <button
               type="button"
@@ -189,21 +187,27 @@ export function Toolbar({
             </button>
           </div>
 
-          <div className="pixel-toolbar-note px-4 py-2.5 text-[13px] text-slate-500 dark:text-zinc-400">
-            Ctrl+Enter 格式化 · Ctrl+Shift+C 压缩 · Ctrl+L 清空
+          <div className="pixel-toolbar-note max-w-full px-3 py-2 text-[12px] leading-6 text-slate-500 dark:text-zinc-400 sm:px-4 sm:py-2.5 sm:text-[13px]">
+            Ctrl+Enter 格式化 路 Ctrl+Shift+C 压缩 路 Ctrl+L 清空
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 xl:items-end">
-          <div className="flex flex-wrap gap-3">
+        <div className="flex w-full flex-col gap-2.5 2xl:max-w-[720px] 2xl:items-end">
+          <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(124px,1fr))] gap-2.5">
             <ActionButton label="格式化" icon={<SparkIcon />} onClick={onFormat} variant="primary" />
             <ActionButton label="压缩" icon={<CompressIcon />} onClick={onCompress} />
             <ActionButton label="复制结果" icon={<CopyIcon />} onClick={onCopy} />
-            <ActionButton label="回填输入" icon={<PasteIcon />} onClick={onApply} />
+            <ActionButton
+              label={alwaysOnTop ? '取消置顶' : '窗口置顶'}
+              icon={<PinIcon />}
+              onClick={onToggleAlwaysOnTop}
+              disabled={!alwaysOnTopAvailable}
+              active={alwaysOnTop}
+            />
             <ActionButton label="清空" icon={<ClearIcon />} onClick={onClear} variant="ghost" />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(124px,1fr))] gap-2.5">
             <UtilityButton label="导入文件" icon={<FileImportIcon />} onClick={onImportFile} />
             <UtilityButton label="导出结果" icon={<FileExportIcon />} onClick={onExportFile} />
             <UtilityButton label="导入剪贴板" icon={<PasteIcon />} onClick={onImportClipboard} />
@@ -218,13 +222,6 @@ export function Toolbar({
               icon={<HistoryIcon />}
               onClick={onToggleHistory}
               active={historyOpen}
-            />
-            <UtilityButton
-              label={alwaysOnTop ? '取消置顶' : '窗口置顶'}
-              icon={<PinIcon />}
-              onClick={onToggleAlwaysOnTop}
-              disabled={!alwaysOnTopAvailable}
-              active={alwaysOnTop}
             />
           </div>
         </div>
