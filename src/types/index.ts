@@ -1,5 +1,11 @@
 export type FormatterMode = 'json' | 'xml'
 
+export type WorkbenchId = 'formatter' | 'compare' | 'cron'
+
+export type CompareMode = 'auto' | FormatterMode | 'text'
+
+export type ComparePane = 'left' | 'right'
+
 export type FormatAction = 'format' | 'compress'
 
 export type OutputViewMode = 'structured' | 'raw'
@@ -30,6 +36,19 @@ export interface ScrollSyncState {
   left: number
   topRatio: number
   leftRatio: number
+}
+
+export interface DiffStats {
+  changes: number
+  insertions: number
+  deletions: number
+  modifications: number
+}
+
+export interface ImportedTextPayload {
+  text: string
+  path: string | null
+  name: string | null
 }
 
 export interface FormatterSnapshot {

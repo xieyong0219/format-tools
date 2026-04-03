@@ -4,8 +4,6 @@ import { ActionButton } from './ActionButton'
 
 interface ToolbarProps {
   mode: FormatterMode
-  alwaysOnTop: boolean
-  alwaysOnTopAvailable: boolean
   linkedScrollEnabled: boolean
   historyOpen: boolean
   onModeChange: (mode: FormatterMode) => void
@@ -18,7 +16,6 @@ interface ToolbarProps {
   onExportFile: () => void
   onToggleLinkedScroll: () => void
   onToggleHistory: () => void
-  onToggleAlwaysOnTop: () => void
 }
 
 function SparkIcon() {
@@ -60,14 +57,6 @@ function ClearIcon() {
   return (
     <svg viewBox="0 0 20 20" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
       <path d="m4 4 12 12M16 4 4 16" />
-    </svg>
-  )
-}
-
-function PinIcon() {
-  return (
-    <svg viewBox="0 0 20 20" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-      <path d="M6.5 3.5h7l-1 4 2 2v1h-4l-.5 6-.5-6h-4v-1l2-2-1-4Z" />
     </svg>
   )
 }
@@ -142,8 +131,6 @@ function UtilityButton({
 
 export function Toolbar({
   mode,
-  alwaysOnTop,
-  alwaysOnTopAvailable,
   linkedScrollEnabled,
   historyOpen,
   onModeChange,
@@ -156,7 +143,6 @@ export function Toolbar({
   onExportFile,
   onToggleLinkedScroll,
   onToggleHistory,
-  onToggleAlwaysOnTop,
 }: ToolbarProps) {
   return (
     <section className="pixel-strip px-3 py-3 sm:px-4 sm:py-3.5 lg:px-6">
@@ -187,8 +173,10 @@ export function Toolbar({
             </button>
           </div>
 
-          <div className="pixel-toolbar-note max-w-full px-3 py-2 text-[12px] leading-6 text-slate-500 dark:text-zinc-400 sm:px-4 sm:py-2.5 sm:text-[13px]">
-            Ctrl+Enter 格式化 路 Ctrl+Shift+C 压缩 路 Ctrl+L 清空
+          <div className="hidden min-w-0 lg:flex lg:items-center">
+            <span className="text-[12px] tracking-[0.06em] text-slate-500 dark:text-zinc-400">
+              快捷键: Ctrl+Enter / Ctrl+Shift+C / Ctrl+L
+            </span>
           </div>
         </div>
 
@@ -197,13 +185,6 @@ export function Toolbar({
             <ActionButton label="格式化" icon={<SparkIcon />} onClick={onFormat} variant="primary" />
             <ActionButton label="压缩" icon={<CompressIcon />} onClick={onCompress} />
             <ActionButton label="复制结果" icon={<CopyIcon />} onClick={onCopy} />
-            <ActionButton
-              label={alwaysOnTop ? '取消置顶' : '窗口置顶'}
-              icon={<PinIcon />}
-              onClick={onToggleAlwaysOnTop}
-              disabled={!alwaysOnTopAvailable}
-              active={alwaysOnTop}
-            />
             <ActionButton label="清空" icon={<ClearIcon />} onClick={onClear} variant="ghost" />
           </div>
 

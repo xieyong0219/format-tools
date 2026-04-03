@@ -13,7 +13,7 @@ const ignoredDirectories = new Set([
 ])
 
 const ignoredFiles = new Set([
-  path.join('scripts', 'check-encoding.mjs'),
+  'scripts/check-encoding.mjs',
 ])
 
 const textExtensions = new Set([
@@ -50,8 +50,10 @@ const suspiciousTokens = [
 ]
 
 function shouldIgnoreDirectory(relativePath) {
+  const normalizedPath = relativePath.split(path.sep).join('/')
+
   return Array.from(ignoredDirectories).some(
-    (directory) => relativePath === directory || relativePath.startsWith(`${directory}${path.sep}`),
+    (directory) => normalizedPath === directory || normalizedPath.startsWith(`${directory}/`),
   )
 }
 
@@ -67,6 +69,7 @@ async function collectFiles(currentPath, bucket) {
   for (const entry of entries) {
     const absolutePath = path.join(currentPath, entry.name)
     const relativePath = path.relative(projectRoot, absolutePath)
+    const normalizedRelativePath = relativePath.split(path.sep).join('/')
 
     if (entry.isDirectory()) {
       if (!shouldIgnoreDirectory(relativePath)) {
@@ -76,7 +79,7 @@ async function collectFiles(currentPath, bucket) {
     }
 
     if (entry.isFile() && isTextFile(absolutePath)) {
-      if (!ignoredFiles.has(relativePath)) {
+      if (!ignoredFiles.has(normalizedRelativePath)) {
         bucket.push(absolutePath)
       }
     }

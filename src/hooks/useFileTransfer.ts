@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, type ChangeEvent } from 'react'
+import type { ImportedTextPayload } from '../types'
 
 const ACCEPTED_EXTENSIONS = '.json,.xml,.txt,.pom'
 
@@ -23,6 +24,18 @@ function readFileAsText(file: File) {
 
 export function useFileTransfer() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingPickerResolveRef = useRef<((value: ImportedTextPayload | null) => void) | null>(null)
+  const pendingPickerRejectRef = useRef<((reason?: unknown) => void) | null>(null)
+  const focusCleanupRef = useRef<(() => void) | null>(null)
+
+  function clearPendingPicker() {
+    pendingPickerResolveRef.current = null
+    pendingPickerRejectRef.current = null
+    if (focusCleanupRef.current) {
+      focusCleanupRef.current()
+      focusCleanupRef.current = null
+    }
+  }
 
   async function openFilePicker() {
     if (hasTauriRuntime()) {
@@ -44,11 +57,43 @@ export function useFileTransfer() {
         return null
       }
 
-      return readTextFile(selectedPath)
+      const text = await readTextFile(selectedPath)
+      return {
+        text,
+        path: selectedPath,
+        name: selectedPath.split(/[/\\]/).pop() ?? null,
+      }
     }
 
-    fileInputRef.current?.click()
-    return null
+    const input = fileInputRef.current
+    if (!input) {
+      return null
+    }
+
+    if (pendingPickerResolveRef.current) {
+      pendingPickerResolveRef.current(null)
+      clearPendingPicker()
+    }
+
+    input.value = ''
+
+    return new Promise<ImportedTextPayload | null>((resolve, reject) => {
+      pendingPickerResolveRef.current = resolve
+      pendingPickerRejectRef.current = reject
+
+      const handleFocus = () => {
+        window.setTimeout(() => {
+          if (pendingPickerResolveRef.current) {
+            pendingPickerResolveRef.current(null)
+            clearPendingPicker()
+          }
+        }, 300)
+      }
+
+      window.addEventListener('focus', handleFocus, { once: true })
+      focusCleanupRef.current = () => window.removeEventListener('focus', handleFocus)
+      input.click()
+    })
   }
 
   async function readSelectedFile(file: File | null | undefined) {
@@ -100,6 +145,37 @@ export function useFileTransfer() {
     return true
   }
 
+  async function handleBrowserFileInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    const resolve = pendingPickerResolveRef.current
+    const reject = pendingPickerRejectRef.current
+
+    try {
+      if (!resolve) {
+        event.target.value = ''
+        return
+      }
+
+      const text = await readSelectedFile(file)
+      resolve(
+        text
+          ? {
+              text,
+              path: file?.name ?? null,
+              name: file?.name ?? null,
+            }
+          : null,
+      )
+    } catch (error) {
+      if (reject) {
+        reject(error)
+      }
+    } finally {
+      clearPendingPicker()
+      event.target.value = ''
+    }
+  }
+
   return {
     acceptedExtensions: ACCEPTED_EXTENSIONS,
     fileInputRef,
@@ -107,5 +183,6 @@ export function useFileTransfer() {
     readSelectedFile,
     readDroppedFiles,
     exportText,
+    handleBrowserFileInputChange,
   }
 }

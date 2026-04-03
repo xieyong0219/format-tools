@@ -1,19 +1,28 @@
-import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { CompareToolbar } from './components/CompareToolbar'
+import { CompareWorkspace } from './components/CompareWorkspace'
+import { CronToolbar } from './components/CronToolbar'
+import { CronWorkspace } from './components/CronWorkspace'
 import { HistoryPanel } from './components/HistoryPanel'
 import { OutputPreviewDialog } from './components/OutputPreviewDialog'
-import { StatusBar } from './components/StatusBar'
 import { StructuredInput, type StructuredInputHandle } from './components/StructuredInput'
 import { StructuredOutput } from './components/StructuredOutput'
 import { Toolbar } from './components/Toolbar'
+import { WorkbenchDialog } from './components/WorkbenchDialog'
+import { WorkspaceSwitcher } from './components/WorkspaceSwitcher'
 import { useClipboard } from './hooks/useClipboard'
+import { useCompareWorkbench } from './hooks/useCompareWorkbench'
+import { useCronWorkbench } from './hooks/useCronWorkbench'
 import { useFileTransfer } from './hooks/useFileTransfer'
 import { useFormatter } from './hooks/useFormatter'
 import { useHistoryRecords } from './hooks/useHistoryRecords'
 import { useHotkeys } from './hooks/useHotkeys'
 import { useTheme } from './hooks/useTheme'
-import { useWindowControls } from './hooks/useWindowControls'
-import type { HistoryRecord, ScrollSyncState } from './types'
+import type { ComparePane, HistoryRecord, ScrollSyncState, WorkbenchId } from './types'
 import { getNextHeroMessage } from './utils/heroMessages'
+import { workbenchMetaMap } from './utils/workbenchMeta'
+
+function noop() {}
 
 function ThemeIcon({ isDark }: { isDark: boolean }) {
   if (isDark) {
@@ -66,24 +75,36 @@ function App() {
   const heroHitTimeoutRef = useRef<number | null>(null)
   const heroMeritTimeoutRef = useRef<number | null>(null)
   const { readClipboardText, writeClipboardText } = useClipboard()
-  const { acceptedExtensions, fileInputRef, openFilePicker, readSelectedFile, readDroppedFiles, exportText } =
+  const {
+    acceptedExtensions,
+    fileInputRef,
+    openFilePicker,
+    readDroppedFiles,
+    exportText,
+    handleBrowserFileInputChange,
+  } =
     useFileTransfer()
   const formatter = useFormatter()
+  const compare = useCompareWorkbench()
+  const cron = useCronWorkbench()
   const { records, addRecord, removeRecord, clearHistory } = useHistoryRecords()
   const { isDark, toggleTheme } = useTheme()
-  const windowControls = useWindowControls()
+  const [workspace, setWorkspace] = useState<WorkbenchId>('formatter')
   const [heroMessage, setHeroMessage] = useState(() => getNextHeroMessage())
   const [isHeroMessageHitting, setIsHeroMessageHitting] = useState(false)
   const [showHeroMerit, setShowHeroMerit] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [linkedScrollEnabled, setLinkedScrollEnabled] = useState(false)
   const [outputPreviewOpen, setOutputPreviewOpen] = useState(false)
+  const [workbenchDialogOpen, setWorkbenchDialogOpen] = useState(false)
   const [scrollSyncState, setScrollSyncState] = useState<ScrollSyncState | null>(null)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (workbenchDialogOpen && workspace === 'formatter') {
+      inputRef.current?.focus()
+    }
+  }, [workspace, workbenchDialogOpen])
 
   useEffect(() => {
     return () => {
@@ -160,6 +181,34 @@ function App() {
     }
   }
 
+  async function handleCompareImportClipboard(target?: ComparePane) {
+    try {
+      const text = await readClipboardText()
+      if (!text.trim()) {
+        compare.setNotice('剪贴板中暂无可导入内容。', 'info')
+        return
+      }
+
+      compare.importPane(target ?? compare.activePane, text)
+    } catch {
+      compare.setNotice('读取系统剪贴板失败，请检查权限设置。', 'error')
+    }
+  }
+
+  async function handleCronImportClipboard() {
+    try {
+      const text = await readClipboardText()
+      if (!text.trim()) {
+        cron.setNotice('剪贴板中暂无可导入内容。', 'info')
+        return
+      }
+
+      cron.importExpression(text)
+    } catch {
+      cron.setNotice('读取系统剪贴板失败，请检查权限设置。', 'error')
+    }
+  }
+
   async function handleCopyOutput() {
     if (!formatter.output.trim()) {
       formatter.setNotice('暂无可复制内容。', 'info')
@@ -174,36 +223,39 @@ function App() {
     }
   }
 
-  async function handleImportFile(file?: File | null) {
+  async function handleCompareImportFile(target: ComparePane) {
     try {
-      const text = await readSelectedFile(file)
-      if (!text.trim()) {
-        formatter.setNotice('文件内容为空，未导入。', 'info')
+      const imported = await openFilePicker()
+
+      if (imported === null) {
         return
       }
 
-      formatter.importInput(text)
-      formatter.setNotice('文件内容已导入输入区。', 'success')
-      inputRef.current?.focus()
+      if (!imported.text.trim()) {
+        compare.setNotice('文件内容为空，未导入。', 'info')
+        return
+      }
+
+      compare.importPane(target, imported.text, imported.path ?? imported.name)
     } catch {
-      formatter.setNotice('读取文件失败，请检查文件编码或重试。', 'error')
+      compare.setNotice('读取文件失败，请检查文件编码或重试。', 'error')
     }
   }
 
   async function handleOpenImportFile() {
     try {
-      const text = await openFilePicker()
+      const imported = await openFilePicker()
 
-      if (text === null) {
+      if (imported === null) {
         return
       }
 
-      if (!text.trim()) {
+      if (!imported.text.trim()) {
         formatter.setNotice('文件内容为空，未导入。', 'info')
         return
       }
 
-      formatter.importInput(text)
+      formatter.importInput(imported.text)
       formatter.setNotice('文件内容已导入输入区。', 'success')
       inputRef.current?.focus()
     } catch {
@@ -231,12 +283,6 @@ function App() {
     }
   }
 
-  async function handleFileInputChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    await handleImportFile(file)
-    event.target.value = ''
-  }
-
   async function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setIsDraggingFile(false)
@@ -244,15 +290,35 @@ function App() {
     try {
       const text = await readDroppedFiles(event.dataTransfer.files)
       if (!text.trim()) {
-        formatter.setNotice('拖入的文件内容为空。', 'info')
+        if (workspace === 'compare') {
+          compare.setNotice('拖入的文件内容为空。', 'info')
+        } else if (workspace === 'cron') {
+          cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+        } else {
+          formatter.setNotice('拖入的文件内容为空。', 'info')
+        }
         return
       }
 
-      formatter.importInput(text)
-      formatter.setNotice('已通过拖拽导入文件。', 'success')
-      inputRef.current?.focus()
+      if (workspace === 'compare') {
+        compare.importPane(compare.activePane, text)
+        setWorkbenchDialogOpen(true)
+      } else if (workspace === 'cron') {
+        cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+      } else {
+        formatter.importInput(text)
+        formatter.setNotice('已通过拖拽导入文件。', 'success')
+        setWorkbenchDialogOpen(true)
+        inputRef.current?.focus()
+      }
     } catch {
-      formatter.setNotice('拖拽导入失败，请重试。', 'error')
+      if (workspace === 'compare') {
+        compare.setNotice('拖拽导入失败，请重试。', 'error')
+      } else if (workspace === 'cron') {
+        cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+      } else {
+        formatter.setNotice('拖拽导入失败，请重试。', 'error')
+      }
     }
   }
 
@@ -277,23 +343,84 @@ function App() {
     inputRef.current?.focus()
   }
 
-  async function handleToggleAlwaysOnTop() {
-    const enabled = await windowControls.toggleAlwaysOnTop()
-
-    if (enabled === null) {
-      formatter.setNotice('当前环境暂不支持窗口置顶。', 'info')
+  async function handleCopyCronExpression() {
+    if (!cron.expressionDraft.trim()) {
+      cron.setNotice('暂无可复制的 Cron 表达式。', 'info')
       return
     }
 
-    formatter.setNotice(enabled ? '已开启窗口置顶。' : '已关闭窗口置顶。', 'success')
+    try {
+      await writeClipboardText(cron.expressionDraft.trim())
+      cron.setNotice('Cron 表达式已复制到系统剪贴板。', 'success')
+    } catch {
+      cron.setNotice('复制 Cron 表达式失败，请稍后重试。', 'error')
+    }
+  }
+
+  function handleWorkspaceSelect(nextWorkspace: WorkbenchId) {
+    setWorkspace(nextWorkspace)
+    setHistoryOpen(false)
+    setOutputPreviewOpen(false)
+    setWorkbenchDialogOpen(true)
   }
 
   useHotkeys({
-    onFormat: handleFormat,
-    onCompress: handleCompress,
-    onClear: formatter.clearAll,
-    onImportClipboard: handleImportClipboard,
+    onFormat:
+      workbenchDialogOpen
+        ? workspace === 'formatter'
+          ? handleFormat
+          : workspace === 'compare'
+            ? compare.formatBoth
+            : cron.parseExpression
+        : noop,
+    onCompress:
+      workbenchDialogOpen
+        ? workspace === 'formatter'
+          ? handleCompress
+          : workspace === 'cron'
+            ? handleCopyCronExpression
+            : noop
+        : noop,
+    onClear:
+      workbenchDialogOpen
+        ? workspace === 'formatter'
+          ? formatter.clearAll
+          : workspace === 'compare'
+            ? compare.clearAll
+            : cron.clearAll
+        : noop,
+    onImportClipboard:
+      workbenchDialogOpen
+        ? workspace === 'formatter'
+          ? handleImportClipboard
+          : workspace === 'compare'
+            ? () => handleCompareImportClipboard()
+            : handleCronImportClipboard
+        : noop,
   })
+
+  const activeErrorMessage =
+    workspace === 'formatter'
+      ? formatter.errorMessage
+      : workspace === 'compare' && compare.statusTone === 'error'
+        ? compare.statusMessage
+        : workspace === 'cron' && cron.statusTone === 'error'
+          ? cron.statusMessage
+          : ''
+  const activeWorkbenchMeta = workbenchMetaMap[workspace]
+  const activeErrorBanner = activeErrorMessage ? (
+    <div className="flex max-w-full flex-wrap items-center gap-2 self-start">
+      <span className="pixel-chip pixel-chip-tone-error px-3 py-1.5 text-[11px] font-semibold">错误</span>
+      <div className="pixel-chip max-w-full px-3 py-1.5 text-[12px] leading-6 text-rose-700 dark:text-rose-200">
+        {activeErrorMessage}
+      </div>
+    </div>
+  ) : null
+
+  function closeWorkbenchDialog() {
+    setWorkbenchDialogOpen(false)
+    setOutputPreviewOpen(false)
+  }
 
   return (
     <div
@@ -307,7 +434,7 @@ function App() {
         type="file"
         accept={acceptedExtensions}
         className="hidden"
-        onChange={handleFileInputChange}
+        onChange={handleBrowserFileInputChange}
       />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[320px] bg-[linear-gradient(180deg,_rgba(255,255,255,0.16),_transparent)] dark:bg-[linear-gradient(180deg,_rgba(101,212,110,0.08),_transparent)]" />
@@ -333,13 +460,151 @@ function App() {
         onClose={() => setOutputPreviewOpen(false)}
       />
 
+      <WorkbenchDialog
+        open={workbenchDialogOpen}
+        title={activeWorkbenchMeta.dialogTitle}
+        description={activeWorkbenchMeta.dialogDescription}
+        onClose={closeWorkbenchDialog}
+      >
+        {workspace === 'formatter' ? (
+          <>
+            <Toolbar
+              mode={formatter.mode}
+              linkedScrollEnabled={linkedScrollEnabled}
+              historyOpen={historyOpen}
+              onModeChange={formatter.changeMode}
+              onFormat={handleFormat}
+              onCompress={handleCompress}
+              onCopy={handleCopyOutput}
+              onClear={formatter.clearAll}
+              onImportClipboard={handleImportClipboard}
+              onImportFile={handleOpenImportFile}
+              onExportFile={handleExportFile}
+              onToggleLinkedScroll={() => setLinkedScrollEnabled((current) => !current)}
+              onToggleHistory={() => setHistoryOpen((current) => !current)}
+            />
+
+            <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
+              {historyOpen ? (
+                <HistoryPanel
+                  records={records}
+                  onRestore={handleRestoreHistory}
+                  onRemove={removeRecord}
+                  onClear={clearHistory}
+                />
+              ) : null}
+
+              {activeErrorBanner}
+
+              <div className="grid min-h-0 flex-1 gap-2.5 xl:gap-3 2xl:grid-cols-2">
+                <StructuredInput
+                  ref={inputRef}
+                  mode={formatter.mode}
+                  title="输入区"
+                  value={formatter.input}
+                  isDark={isDark}
+                  onChange={formatter.setInput}
+                  errorLocation={formatter.errorLocation}
+                  linkedScrollEnabled={linkedScrollEnabled}
+                  externalScrollState={scrollSyncState}
+                  stats={formatter.inputStats}
+                  onScrollSync={handleScrollSync}
+                />
+
+                <StructuredOutput
+                  mode={formatter.mode}
+                  value={formatter.output}
+                  isDark={isDark}
+                  onChange={formatter.setOutput}
+                  linkedScrollEnabled={linkedScrollEnabled}
+                  externalScrollState={scrollSyncState}
+                  stats={formatter.outputStats}
+                  onScrollSync={handleScrollSync}
+                  onOpenPreview={() => setOutputPreviewOpen(true)}
+                />
+              </div>
+            </main>
+
+          </>
+        ) : null}
+
+        {workspace === 'compare' ? (
+          <>
+            <CompareToolbar
+              mode={compare.mode}
+              ignoreTrimWhitespace={compare.ignoreTrimWhitespace}
+              sideBySide={compare.sideBySide}
+              onModeChange={compare.changeMode}
+              onFormatBoth={compare.formatBoth}
+              onSwap={compare.swapPanes}
+              onClear={compare.clearAll}
+              onToggleIgnoreWhitespace={compare.toggleIgnoreTrimWhitespace}
+              onToggleSideBySide={compare.toggleSideBySide}
+              onImportLeft={() => handleCompareImportFile('left')}
+              onImportRight={() => handleCompareImportFile('right')}
+            />
+
+            <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
+              {activeErrorBanner}
+              <CompareWorkspace
+                leftValue={compare.leftValue}
+                rightValue={compare.rightValue}
+                leftStats={compare.leftStats}
+                rightStats={compare.rightStats}
+                leftSourcePath={compare.leftSourcePath}
+                rightSourcePath={compare.rightSourcePath}
+                mode={compare.mode}
+                resolvedMode={compare.resolvedMode}
+                activePane={compare.activePane}
+                diffStats={compare.diffStats}
+                ignoreTrimWhitespace={compare.ignoreTrimWhitespace}
+                sideBySide={compare.sideBySide}
+                isDark={isDark}
+                onChangeLeft={compare.setLeftValue}
+                onChangeRight={compare.setRightValue}
+                onActivePaneChange={compare.setActivePane}
+                onDiffStatsChange={compare.setDiffStats}
+              />
+            </main>
+
+          </>
+        ) : null}
+
+        {workspace === 'cron' ? (
+          <>
+            <CronToolbar
+              onCopyExpression={handleCopyCronExpression}
+              onParse={cron.parseExpression}
+              onImportClipboard={handleCronImportClipboard}
+              onClear={cron.clearAll}
+            />
+
+            <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
+              {activeErrorBanner}
+              <CronWorkspace
+                builder={cron.builder}
+                expressionDraft={cron.expressionDraft}
+                validation={cron.validation}
+                description={cron.description}
+                nextRuns={cron.nextRuns}
+                templates={cron.templates}
+                onPresetChange={cron.changePreset}
+                onBuilderChange={cron.updateBuilder}
+                onExpressionChange={cron.setExpression}
+                onApplyTemplate={cron.applyTemplate}
+              />
+            </main>
+          </>
+        ) : null}
+      </WorkbenchDialog>
+
       <div className="relative mx-auto flex h-full min-h-0 max-w-[1540px] flex-col px-2 py-2 sm:px-4 sm:py-4 lg:px-8 lg:py-6">
         <section className="pixel-shell flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="border-b border-slate-200/75 px-4 py-4 dark:border-zinc-800/80 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
+            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
               <div className="max-w-4xl min-w-0">
                 <h1 className="pixel-title text-[20px] text-slate-900 dark:text-zinc-50 sm:text-[24px] lg:text-[34px]">
-                  JSON / XML 格式化工具
+                  开发者工具箱
                 </h1>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <p className="pixel-subtitle min-w-0 max-w-3xl flex-1 text-[13px] leading-6 text-slate-600 dark:text-zinc-400 sm:text-[14px] sm:leading-7">
@@ -353,132 +618,23 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex w-full flex-col items-stretch gap-2 2xl:max-w-[520px] 2xl:items-end">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="pixel-icon-button inline-flex h-10 w-10 items-center justify-center text-slate-500 transition-all duration-150 ease-out will-change-transform hover:text-slate-900 active:translate-y-[2px] active:scale-[0.96] dark:text-zinc-300 dark:hover:text-zinc-100"
-                    title={isDark ? '切换到浅色模式' : '切换到深色模式'}
-                    aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
-                  >
-                    <ThemeIcon isDark={isDark} />
-                  </button>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-3 2xl:w-full">
-                  <div className="pixel-card px-3.5 py-3">
-                    <div className="pixel-stat-label text-[10px] font-semibold uppercase text-slate-400 dark:text-zinc-500">
-                      Mode
-                    </div>
-                    <div className="mt-1 text-[18px] font-semibold text-slate-900 dark:text-zinc-100">
-                      {formatter.mode.toUpperCase()}
-                    </div>
-                  </div>
-                  <div className="pixel-card px-3.5 py-3">
-                    <div className="pixel-stat-label text-[10px] font-semibold uppercase text-slate-400 dark:text-zinc-500">
-                      Input
-                    </div>
-                    <div className="mt-1 text-[18px] font-semibold text-slate-900 dark:text-zinc-100">
-                      {formatter.inputStats.characters}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">字符数</div>
-                  </div>
-                  <div className="pixel-card px-3.5 py-3">
-                    <div className="pixel-stat-label text-[10px] font-semibold uppercase text-slate-400 dark:text-zinc-500">
-                      Output
-                    </div>
-                    <div className="mt-1 text-[18px] font-semibold text-slate-900 dark:text-zinc-100">
-                      {formatter.outputStats.characters}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">字符数</div>
-                  </div>
-                </div>
+              <div className="flex justify-end self-start pt-0.5 2xl:min-w-[72px]">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="pixel-icon-button inline-flex h-10 w-10 items-center justify-center text-slate-500 transition-all duration-150 ease-out will-change-transform hover:text-slate-900 active:translate-y-[2px] active:scale-[0.96] dark:text-zinc-300 dark:hover:text-zinc-100"
+                  title={isDark ? '切换到浅色模式' : '切换到深色模式'}
+                  aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
+                >
+                  <ThemeIcon isDark={isDark} />
+                </button>
               </div>
             </div>
           </div>
 
-          <Toolbar
-            mode={formatter.mode}
-            alwaysOnTop={windowControls.isAlwaysOnTop}
-            alwaysOnTopAvailable={windowControls.isAvailable}
-            linkedScrollEnabled={linkedScrollEnabled}
-            historyOpen={historyOpen}
-            onModeChange={formatter.changeMode}
-            onFormat={handleFormat}
-            onCompress={handleCompress}
-            onCopy={handleCopyOutput}
-            onClear={formatter.clearAll}
-            onImportClipboard={handleImportClipboard}
-            onImportFile={handleOpenImportFile}
-            onExportFile={handleExportFile}
-            onToggleLinkedScroll={() => setLinkedScrollEnabled((current) => !current)}
-            onToggleHistory={() => setHistoryOpen((current) => !current)}
-            onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-          />
-
-          <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
-            {historyOpen ? (
-              <HistoryPanel
-                records={records}
-                onRestore={handleRestoreHistory}
-                onRemove={removeRecord}
-                onClear={clearHistory}
-              />
-            ) : null}
-
-            {formatter.errorMessage ? (
-              <div className="rounded-[24px] border border-rose-200 bg-[linear-gradient(180deg,_rgba(255,255,255,0.9),_rgba(255,241,242,0.98))] px-5 py-4 shadow-[0_12px_30px_rgba(244,63,94,0.08)] dark:border-rose-900/80 dark:bg-[linear-gradient(180deg,_rgba(69,10,10,0.9),_rgba(24,24,27,0.96))] dark:shadow-none">
-                <div className="text-sm font-semibold text-rose-700">错误提示</div>
-                <div className="mt-2 text-sm leading-6 text-rose-600 dark:text-rose-200">
-                  {formatter.errorMessage}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="grid min-h-0 flex-1 gap-2.5 xl:gap-3 2xl:grid-cols-2">
-              <StructuredInput
-                ref={inputRef}
-                mode={formatter.mode}
-                title="输入区"
-                value={formatter.input}
-                isDark={isDark}
-                onChange={formatter.setInput}
-                errorLocation={formatter.errorLocation}
-                linkedScrollEnabled={linkedScrollEnabled}
-                externalScrollState={scrollSyncState}
-                stats={formatter.inputStats}
-                onScrollSync={handleScrollSync}
-              />
-
-              <StructuredOutput
-                mode={formatter.mode}
-                value={formatter.output}
-                isDark={isDark}
-                onChange={formatter.setOutput}
-                linkedScrollEnabled={linkedScrollEnabled}
-                externalScrollState={scrollSyncState}
-                stats={formatter.outputStats}
-                onScrollSync={handleScrollSync}
-                onOpenPreview={() => setOutputPreviewOpen(true)}
-              />
-            </div>
+          <main className="flex min-h-0 flex-1 flex-col overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
+            <WorkspaceSwitcher workspace={workspace} onSelect={handleWorkspaceSelect} />
           </main>
-
-          <StatusBar
-            mode={formatter.mode}
-            modeSource={formatter.modeSource}
-            inputStats={formatter.inputStats}
-            outputStats={formatter.outputStats}
-            historyCount={records.length}
-            isDark={isDark}
-            linkedScrollEnabled={linkedScrollEnabled}
-            alwaysOnTop={windowControls.isAlwaysOnTop}
-            alwaysOnTopAvailable={windowControls.isAvailable}
-            statusTone={formatter.statusTone}
-            statusMessage={formatter.statusMessage}
-            errorSummary={formatter.errorSummary}
-          />
         </section>
       </div>
     </div>
