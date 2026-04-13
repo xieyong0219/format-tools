@@ -10,7 +10,7 @@ interface OutputPreviewDialogProps {
   isDark?: boolean
   onChange: (value: string) => void
   onCopy: () => void
-  onExport: () => void
+  onExport?: () => void
   onClose: () => void
 }
 
@@ -84,16 +84,18 @@ export function OutputPreviewDialog({
         <CopyIcon />
         <span>复制结果</span>
       </button>
-      <button
-        type="button"
-        onClick={onExport}
-        className="pixel-button inline-flex h-9 min-w-[96px] flex-1 items-center justify-center gap-2 px-3 text-[12px] font-medium transition-all duration-150 ease-out will-change-transform active:translate-y-[1px] active:scale-[0.985] sm:flex-none"
-        aria-label="导出结果"
-        title="导出结果"
-      >
-        <ExportIcon />
-        <span>导出结果</span>
-      </button>
+      {onExport ? (
+        <button
+          type="button"
+          onClick={onExport}
+          className="pixel-button inline-flex h-9 min-w-[96px] flex-1 items-center justify-center gap-2 px-3 text-[12px] font-medium transition-all duration-150 ease-out will-change-transform active:translate-y-[1px] active:scale-[0.985] sm:flex-none"
+          aria-label="导出结果"
+          title="导出结果"
+        >
+          <ExportIcon />
+          <span>导出结果</span>
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onClose}

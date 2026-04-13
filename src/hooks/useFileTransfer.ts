@@ -1,15 +1,16 @@
 import { useRef, type ChangeEvent } from 'react'
-import type { ImportedTextPayload } from '../types'
+import type { FormatterMode, ImportedTextPayload } from '../types'
 
-const ACCEPTED_EXTENSIONS = '.json,.xml,.txt,.pom'
+const ACCEPTED_EXTENSIONS = '.json,.xml,.sql,.txt,.pom'
 
 function hasTauriRuntime() {
   return typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)
 }
 
-function getDefaultFileName(mode: 'json' | 'xml') {
+function getDefaultFileName(mode: FormatterMode) {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  return `formatter-output-${stamp}.${mode === 'json' ? 'json' : 'xml'}`
+  const extension = mode === 'json' ? 'json' : mode === 'xml' ? 'xml' : 'sql'
+  return `formatter-output-${stamp}.${extension}`
 }
 
 function readFileAsText(file: File) {
@@ -48,7 +49,7 @@ export function useFileTransfer() {
         filters: [
           {
             name: 'JSON XML Text',
-            extensions: ['json', 'xml', 'txt', 'pom'],
+            extensions: ['json', 'xml', 'sql', 'txt', 'pom'],
           },
         ],
       })
@@ -112,7 +113,7 @@ export function useFileTransfer() {
     return readSelectedFile(files[0])
   }
 
-  async function exportText(mode: 'json' | 'xml', text: string) {
+  async function exportText(mode: FormatterMode, text: string) {
     if (hasTauriRuntime()) {
       const { save } = await import('@tauri-apps/plugin-dialog')
       const { writeTextFile } = await import('@tauri-apps/plugin-fs')
@@ -122,7 +123,7 @@ export function useFileTransfer() {
         filters: [
           {
             name: mode.toUpperCase(),
-            extensions: [mode === 'json' ? 'json' : 'xml', 'txt'],
+            extensions: [mode === 'json' ? 'json' : mode === 'xml' ? 'xml' : 'sql', 'txt'],
           },
         ],
       })

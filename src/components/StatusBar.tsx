@@ -27,12 +27,14 @@ const statusToneClassMap: Record<StatusTone, string> = {
 const modeLabelMap: Record<FormatterMode, string> = {
   json: 'JSON',
   xml: 'XML',
+  sql: 'SQL',
 }
 
 const workspaceLabelMap: Record<WorkbenchId, string> = {
   formatter: '格式化',
   compare: '代码比对',
   cron: 'Cron 表达式',
+  sql: 'SQL 工具',
 }
 
 export function StatusBar({
@@ -56,11 +58,11 @@ export function StatusBar({
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-slate-500 dark:text-zinc-400">
           <span className="pixel-chip px-3 py-1.5">工作台: {workspaceLabelMap[workspace]}</span>
-          {workspace === 'formatter' ? (
+          {workspace === 'formatter' || workspace === 'sql' ? (
             <>
               <span className="pixel-chip px-3 py-1.5">
                 模式: {modeLabelMap[mode]}
-                {modeSource === 'auto' ? ' · 自动识别' : ''}
+                {workspace === 'formatter' && modeSource === 'auto' ? ' · 自动识别' : ''}
               </span>
               <span className="pixel-chip px-3 py-1.5">
                 输入: {inputStats.characters} 字 / {inputStats.lines} 行

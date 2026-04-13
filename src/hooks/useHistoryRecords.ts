@@ -4,13 +4,13 @@ import type { FormatterSnapshot, HistoryRecord } from '../types'
 const HISTORY_STORAGE_KEY = 'json-xml-formatter-history'
 const HISTORY_LIMIT = 12
 
-function readStoredHistory(): HistoryRecord[] {
+function readStoredHistory(storageKey: string): HistoryRecord[] {
   if (typeof window === 'undefined') {
     return []
   }
 
   try {
-    const rawValue = window.localStorage.getItem(HISTORY_STORAGE_KEY)
+    const rawValue = window.localStorage.getItem(storageKey)
     if (!rawValue) {
       return []
     }
@@ -22,12 +22,12 @@ function readStoredHistory(): HistoryRecord[] {
   }
 }
 
-export function useHistoryRecords() {
-  const [records, setRecords] = useState<HistoryRecord[]>(readStoredHistory)
+export function useHistoryRecords(storageKey = HISTORY_STORAGE_KEY) {
+  const [records, setRecords] = useState<HistoryRecord[]>(() => readStoredHistory(storageKey))
 
   useEffect(() => {
-    window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(records))
-  }, [records])
+    window.localStorage.setItem(storageKey, JSON.stringify(records))
+  }, [records, storageKey])
 
   function addRecord(snapshot: FormatterSnapshot) {
     const nextRecord: HistoryRecord = {

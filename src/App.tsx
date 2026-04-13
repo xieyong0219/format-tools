@@ -5,6 +5,7 @@ import { CronToolbar } from './components/CronToolbar'
 import { CronWorkspace } from './components/CronWorkspace'
 import { HistoryPanel } from './components/HistoryPanel'
 import { OutputPreviewDialog } from './components/OutputPreviewDialog'
+import { SqlToolbar } from './components/SqlToolbar'
 import { StructuredInput, type StructuredInputHandle } from './components/StructuredInput'
 import { StructuredOutput } from './components/StructuredOutput'
 import { Toolbar } from './components/Toolbar'
@@ -17,6 +18,7 @@ import { useFileTransfer } from './hooks/useFileTransfer'
 import { useFormatter } from './hooks/useFormatter'
 import { useHistoryRecords } from './hooks/useHistoryRecords'
 import { useHotkeys } from './hooks/useHotkeys'
+import { useSqlWorkbench } from './hooks/useSqlWorkbench'
 import { useTheme } from './hooks/useTheme'
 import type { ComparePane, HistoryRecord, ScrollSyncState, WorkbenchId } from './types'
 import { getNextHeroMessage } from './utils/heroMessages'
@@ -87,7 +89,9 @@ function App() {
   const formatter = useFormatter()
   const compare = useCompareWorkbench()
   const cron = useCronWorkbench()
-  const { records, addRecord, removeRecord, clearHistory } = useHistoryRecords()
+  const sql = useSqlWorkbench()
+  const formatterHistory = useHistoryRecords('formatter-history')
+  const sqlHistory = useHistoryRecords('sql-history')
   const { isDark, toggleTheme } = useTheme()
   const [workspace, setWorkspace] = useState<WorkbenchId>('formatter')
   const [heroMessage, setHeroMessage] = useState(() => getNextHeroMessage())
@@ -101,7 +105,7 @@ function App() {
   const [isDraggingFile, setIsDraggingFile] = useState(false)
 
   useEffect(() => {
-    if (workbenchDialogOpen && workspace === 'formatter') {
+    if (workbenchDialogOpen && (workspace === 'formatter' || workspace === 'sql')) {
       inputRef.current?.focus()
     }
   }, [workspace, workbenchDialogOpen])
@@ -155,14 +159,42 @@ function App() {
   function handleFormat() {
     const snapshot = formatter.formatContent()
     if (snapshot) {
-      addRecord(snapshot)
+      formatterHistory.addRecord(snapshot)
     }
   }
 
   function handleCompress() {
     const snapshot = formatter.compressContent()
     if (snapshot) {
-      addRecord(snapshot)
+      formatterHistory.addRecord(snapshot)
+    }
+  }
+
+  function handleSqlFormat() {
+    const snapshot = sql.formatContent()
+    if (snapshot) {
+      sqlHistory.addRecord(snapshot)
+    }
+  }
+
+  function handleSqlCompress() {
+    const snapshot = sql.compressContent()
+    if (snapshot) {
+      sqlHistory.addRecord(snapshot)
+    }
+  }
+
+  function handleSqlUppercase() {
+    const snapshot = sql.uppercaseContent()
+    if (snapshot) {
+      sqlHistory.addRecord(snapshot)
+    }
+  }
+
+  function handleSqlLowercase() {
+    const snapshot = sql.lowercaseContent()
+    if (snapshot) {
+      sqlHistory.addRecord(snapshot)
     }
   }
 
@@ -220,6 +252,20 @@ function App() {
       formatter.setNotice('结果已复制到系统剪贴板。', 'success')
     } catch {
       formatter.setNotice('复制失败，请稍后重试。', 'error')
+    }
+  }
+
+  async function handleCopySqlOutput() {
+    if (!sql.output.trim()) {
+      sql.setNotice('暂无可复制内容。', 'info')
+      return
+    }
+
+    try {
+      await writeClipboardText(sql.output)
+      sql.setNotice('SQL 结果已复制到系统剪贴板。', 'success')
+    } catch {
+      sql.setNotice('复制失败，请稍后重试。', 'error')
     }
   }
 
@@ -294,6 +340,8 @@ function App() {
           compare.setNotice('拖入的文件内容为空。', 'info')
         } else if (workspace === 'cron') {
           cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+        } else if (workspace === 'sql') {
+          sql.setNotice('SQL 工作台已关闭文件导入。', 'info')
         } else {
           formatter.setNotice('拖入的文件内容为空。', 'info')
         }
@@ -305,6 +353,8 @@ function App() {
         setWorkbenchDialogOpen(true)
       } else if (workspace === 'cron') {
         cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+      } else if (workspace === 'sql') {
+        sql.setNotice('SQL 工作台已关闭文件导入。', 'info')
       } else {
         formatter.importInput(text)
         formatter.setNotice('已通过拖拽导入文件。', 'success')
@@ -316,6 +366,8 @@ function App() {
         compare.setNotice('拖拽导入失败，请重试。', 'error')
       } else if (workspace === 'cron') {
         cron.setNotice('Cron 工作台暂未开放文件导入。', 'info')
+      } else if (workspace === 'sql') {
+        sql.setNotice('SQL 工作台已关闭文件导入。', 'info')
       } else {
         formatter.setNotice('拖拽导入失败，请重试。', 'error')
       }
@@ -337,8 +389,14 @@ function App() {
     setIsDraggingFile(false)
   }
 
-  function handleRestoreHistory(record: HistoryRecord) {
+  function handleRestoreFormatterHistory(record: HistoryRecord) {
     formatter.restoreSnapshot(record)
+    setHistoryOpen(false)
+    inputRef.current?.focus()
+  }
+
+  function handleRestoreSqlHistory(record: HistoryRecord) {
+    sql.restoreSnapshot(record)
     setHistoryOpen(false)
     inputRef.current?.focus()
   }
@@ -357,6 +415,12 @@ function App() {
     }
   }
 
+  function handleWorkspaceHighlight(nextWorkspace: WorkbenchId) {
+    setWorkspace(nextWorkspace)
+    setHistoryOpen(false)
+    setOutputPreviewOpen(false)
+  }
+
   function handleWorkspaceSelect(nextWorkspace: WorkbenchId) {
     setWorkspace(nextWorkspace)
     setHistoryOpen(false)
@@ -371,7 +435,9 @@ function App() {
           ? handleFormat
           : workspace === 'compare'
             ? compare.formatBoth
-            : cron.parseExpression
+            : workspace === 'cron'
+              ? cron.parseExpression
+              : handleSqlFormat
         : noop,
     onCompress:
       workbenchDialogOpen
@@ -379,7 +445,9 @@ function App() {
           ? handleCompress
           : workspace === 'cron'
             ? handleCopyCronExpression
-            : noop
+            : workspace === 'sql'
+              ? handleSqlCompress
+              : noop
         : noop,
     onClear:
       workbenchDialogOpen
@@ -387,7 +455,9 @@ function App() {
           ? formatter.clearAll
           : workspace === 'compare'
             ? compare.clearAll
-            : cron.clearAll
+            : workspace === 'cron'
+              ? cron.clearAll
+              : sql.clearAll
         : noop,
     onImportClipboard:
       workbenchDialogOpen
@@ -395,7 +465,9 @@ function App() {
           ? handleImportClipboard
           : workspace === 'compare'
             ? () => handleCompareImportClipboard()
-            : handleCronImportClipboard
+            : workspace === 'cron'
+              ? handleCronImportClipboard
+              : noop
         : noop,
   })
 
@@ -406,8 +478,16 @@ function App() {
         ? compare.statusMessage
         : workspace === 'cron' && cron.statusTone === 'error'
           ? cron.statusMessage
-          : ''
+          : workspace === 'sql'
+            ? sql.errorMessage
+            : ''
   const activeWorkbenchMeta = workbenchMetaMap[workspace]
+  const previewMode = workspace === 'sql' ? sql.mode : formatter.mode
+  const previewValue = workspace === 'sql' ? sql.output : formatter.output
+  const previewStats = workspace === 'sql' ? sql.outputStats : formatter.outputStats
+  const previewChangeHandler = workspace === 'sql' ? sql.setOutput : formatter.setOutput
+  const previewCopyHandler = workspace === 'sql' ? handleCopySqlOutput : handleCopyOutput
+  const previewExportHandler = workspace === 'sql' ? undefined : handleExportFile
   const activeErrorBanner = activeErrorMessage ? (
     <div className="flex max-w-full flex-wrap items-center gap-2 self-start">
       <span className="pixel-chip pixel-chip-tone-error px-3 py-1.5 text-[11px] font-semibold">错误</span>
@@ -443,20 +523,20 @@ function App() {
         <div className="fixed inset-6 z-50 flex items-center justify-center border-2 border-dashed border-emerald-500/70 bg-[#f6eedb]/80 backdrop-blur-sm dark:border-emerald-400/50 dark:bg-black/70">
           <div className="pixel-card px-8 py-8 text-center">
             <div className="text-lg font-semibold text-slate-900 dark:text-zinc-100">松开即可导入文件</div>
-            <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">支持 .json / .xml / .txt / .pom</div>
+            <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">支持 .json / .xml / .sql / .txt / .pom</div>
           </div>
         </div>
       ) : null}
 
       <OutputPreviewDialog
         open={outputPreviewOpen}
-        mode={formatter.mode}
-        value={formatter.output}
-        stats={formatter.outputStats}
+        mode={previewMode}
+        value={previewValue}
+        stats={previewStats}
         isDark={isDark}
-        onChange={formatter.setOutput}
-        onCopy={handleCopyOutput}
-        onExport={handleExportFile}
+        onChange={previewChangeHandler}
+        onCopy={previewCopyHandler}
+        onExport={previewExportHandler}
         onClose={() => setOutputPreviewOpen(false)}
       />
 
@@ -487,10 +567,10 @@ function App() {
             <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
               {historyOpen ? (
                 <HistoryPanel
-                  records={records}
-                  onRestore={handleRestoreHistory}
-                  onRemove={removeRecord}
-                  onClear={clearHistory}
+                  records={formatterHistory.records}
+                  onRestore={handleRestoreFormatterHistory}
+                  onRemove={formatterHistory.removeRecord}
+                  onClear={formatterHistory.clearHistory}
                 />
               ) : null}
 
@@ -596,6 +676,58 @@ function App() {
             </main>
           </>
         ) : null}
+
+        {workspace === 'sql' ? (
+          <>
+            <SqlToolbar
+              historyOpen={historyOpen}
+              onFormat={handleSqlFormat}
+              onCompress={handleSqlCompress}
+              onUppercase={handleSqlUppercase}
+              onLowercase={handleSqlLowercase}
+              onCopy={handleCopySqlOutput}
+              onClear={sql.clearAll}
+              onToggleHistory={() => setHistoryOpen((current) => !current)}
+            />
+
+            <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
+              {historyOpen ? (
+                <HistoryPanel
+                  records={sqlHistory.records}
+                  onRestore={handleRestoreSqlHistory}
+                  onRemove={sqlHistory.removeRecord}
+                  onClear={sqlHistory.clearHistory}
+                />
+              ) : null}
+
+              {activeErrorBanner}
+
+              <div className="grid min-h-0 flex-1 gap-2.5 xl:gap-3 2xl:grid-cols-2">
+                <StructuredInput
+                  ref={inputRef}
+                  mode={sql.mode}
+                  title="SQL 输入"
+                  value={sql.input}
+                  isDark={isDark}
+                  onChange={sql.setInput}
+                  errorLocation={sql.errorLocation}
+                  stats={sql.inputStats}
+                  onScrollSync={handleScrollSync}
+                />
+
+                <StructuredOutput
+                  mode={sql.mode}
+                  value={sql.output}
+                  isDark={isDark}
+                  onChange={sql.setOutput}
+                  stats={sql.outputStats}
+                  onScrollSync={handleScrollSync}
+                  onOpenPreview={() => setOutputPreviewOpen(true)}
+                />
+              </div>
+            </main>
+          </>
+        ) : null}
       </WorkbenchDialog>
 
       <div className="relative mx-auto flex h-full min-h-0 max-w-[1540px] flex-col px-2 py-2 sm:px-4 sm:py-4 lg:px-8 lg:py-6">
@@ -633,7 +765,12 @@ function App() {
           </div>
 
           <main className="flex min-h-0 flex-1 flex-col overflow-auto px-2 pb-2 pt-0.5 sm:px-3 sm:pb-3 lg:px-5 lg:pb-5">
-            <WorkspaceSwitcher workspace={workspace} onSelect={handleWorkspaceSelect} />
+            <WorkspaceSwitcher
+              workspace={workspace}
+              keyboardNavigationEnabled={!workbenchDialogOpen}
+              onHighlight={handleWorkspaceHighlight}
+              onSelect={handleWorkspaceSelect}
+            />
           </main>
         </section>
       </div>

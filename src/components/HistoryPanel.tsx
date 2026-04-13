@@ -26,6 +26,22 @@ function summarizeText(value: string, maxLength = 72) {
 }
 
 export function HistoryPanel({ records, onRestore, onRemove, onClear }: HistoryPanelProps) {
+  function getActionLabel(outputViewMode: HistoryRecord['outputViewMode']) {
+    if (outputViewMode === 'raw') {
+      return '压缩'
+    }
+
+    if (outputViewMode === 'uppercase') {
+      return '转大写'
+    }
+
+    if (outputViewMode === 'lowercase') {
+      return '转小写'
+    }
+
+    return '格式化'
+  }
+
   return (
     <section className="pixel-panel p-4">
       <div className="flex flex-col gap-3 border-b border-slate-200/80 px-2 pb-4 dark:border-zinc-800/80 sm:flex-row sm:items-center sm:justify-between">
@@ -59,7 +75,7 @@ export function HistoryPanel({ records, onRestore, onRemove, onClear }: HistoryP
                       {record.mode.toUpperCase()}
                     </span>
                     <span className="pixel-chip px-2.5 py-1 font-medium text-slate-500 dark:text-zinc-300">
-                      {record.outputViewMode === 'raw' ? '压缩' : '格式化'}
+                      {getActionLabel(record.outputViewMode)}
                     </span>
                     <span className="text-slate-400 dark:text-zinc-500">{formatTime(record.createdAt)}</span>
                   </div>

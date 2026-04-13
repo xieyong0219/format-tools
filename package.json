@@ -27,6 +27,7 @@
     "monaco-editor": "^0.55.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "sql-formatter": "^15.7.3",
     "xml-formatter": "^3.7.0"
   },
   "devDependencies": {

@@ -33,7 +33,15 @@ function ensureWorkerEnvironment() {
 }
 
 export function getMonacoLanguage(mode: FormatterMode) {
-  return mode === 'json' ? 'json' : 'xml'
+  if (mode === 'json') {
+    return 'json'
+  }
+
+  if (mode === 'xml') {
+    return 'xml'
+  }
+
+  return 'sql'
 }
 
 export function configureMonaco() {

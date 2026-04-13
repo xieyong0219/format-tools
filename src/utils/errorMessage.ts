@@ -89,12 +89,38 @@ function normalizeXmlError(error: unknown, input: string): ReadableErrorInfo {
   }
 }
 
+function normalizeSqlError(error: unknown, input: string): ReadableErrorInfo {
+  const rawMessage = getMessage(error)
+  const lineColumnMatch = rawMessage.match(/line\s+(\d+)\s+column\s+(\d+)/i)
+
+  const location = lineColumnMatch
+    ? getLocationFromLineColumn(input, Number(lineColumnMatch[1]), Number(lineColumnMatch[2]))
+    : undefined
+
+  const firstLineMessage = rawMessage.split(/\r?\n/, 1)[0]?.trim() ?? rawMessage
+
+  return {
+    message: location
+      ? `SQL 格式错误：${firstLineMessage}（第 ${location.line} 行，第 ${location.column} 列）`
+      : `SQL 格式错误：${firstLineMessage}`,
+    location,
+  }
+}
+
 export function toReadableErrorInfo(
   error: unknown,
   mode: FormatterMode,
   input: string,
 ): ReadableErrorInfo {
-  return mode === 'json' ? normalizeJsonError(error, input) : normalizeXmlError(error, input)
+  if (mode === 'json') {
+    return normalizeJsonError(error, input)
+  }
+
+  if (mode === 'xml') {
+    return normalizeXmlError(error, input)
+  }
+
+  return normalizeSqlError(error, input)
 }
 
 export function summarizeError(message: string, maxLength = 42) {

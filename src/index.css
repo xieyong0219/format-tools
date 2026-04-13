@@ -447,10 +447,13 @@ html.dark .monaco-diff-pane .monaco-diff-editor .line-numbers.char-delete {
 .pixel-button:focus-visible,
 .pixel-icon-button:focus-visible,
 .pixel-segment-button:focus-visible,
-.pixel-muyu-button:focus-visible,
-.pixel-workbench-card:focus-visible {
+ .pixel-muyu-button:focus-visible {
   outline: 2px solid var(--pixel-highlight);
   outline-offset: 3px;
+}
+
+.pixel-workbench-card:focus-visible {
+  outline: none;
 }
 
 .pixel-button-primary {

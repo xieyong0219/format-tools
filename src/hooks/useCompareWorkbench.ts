@@ -45,7 +45,8 @@ function getFormattingMode(mode: CompareMode, value: string) {
     return null
   }
 
-  return detectFormatterMode(value)
+  const detectedMode = detectFormatterMode(value)
+  return detectedMode === 'json' || detectedMode === 'xml' ? detectedMode : null
 }
 
 function formatValueForCompare(value: string, mode: CompareMode) {
@@ -83,7 +84,18 @@ export function useCompareWorkbench() {
       return mode
     }
 
-    return detectFormatterMode(rightValue) ?? detectFormatterMode(leftValue) ?? 'text'
+    const detectedRightMode = detectFormatterMode(rightValue)
+    const detectedLeftMode = detectFormatterMode(leftValue)
+
+    if (detectedRightMode === 'json' || detectedRightMode === 'xml') {
+      return detectedRightMode
+    }
+
+    if (detectedLeftMode === 'json' || detectedLeftMode === 'xml') {
+      return detectedLeftMode
+    }
+
+    return 'text'
   }, [leftValue, mode, rightValue])
 
   function setNotice(message: string, tone: StatusTone) {

@@ -34,4 +34,12 @@ export const workbenchMetaMap: Record<WorkbenchId, WorkbenchMeta> = {
     dialogDescription: '',
     highlights: ['可视化生成', '表达式反解析', '未来 5 次执行时间预览'],
   },
+  sql: {
+    label: 'SQL 工具',
+    detail: '格式化与压缩',
+    description: '把 SQL 查询放进独立工作台里，完成格式化、一行压缩、复制、导入导出与历史恢复。',
+    dialogTitle: 'SQL 工具工作台',
+    dialogDescription: '',
+    highlights: ['双栏输入与输出', '支持格式化 / 单行压缩', '导入、导出与输出放大查看'],
+  },
 }

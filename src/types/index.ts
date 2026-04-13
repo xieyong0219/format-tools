@@ -1,14 +1,14 @@
-export type FormatterMode = 'json' | 'xml'
+export type FormatterMode = 'json' | 'xml' | 'sql'
 
-export type WorkbenchId = 'formatter' | 'compare' | 'cron'
+export type WorkbenchId = 'formatter' | 'compare' | 'cron' | 'sql'
 
-export type CompareMode = 'auto' | FormatterMode | 'text'
+export type CompareMode = 'auto' | 'json' | 'xml' | 'text'
 
 export type ComparePane = 'left' | 'right'
 
 export type FormatAction = 'format' | 'compress'
 
-export type OutputViewMode = 'structured' | 'raw'
+export type OutputViewMode = 'structured' | 'raw' | 'uppercase' | 'lowercase'
 
 export type StatusTone = 'idle' | 'info' | 'success' | 'error'
 
